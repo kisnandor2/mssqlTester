@@ -1,0 +1,26 @@
+{
+  "name": "mssql_tester",
+  "version": "1.0.0",
+  "description": "@UBBCLUJ, mssql assignment tester",
+  "main": "testAll.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kisnandor2/mssqlTester.git"
+  },
+  "keywords": [
+    "tester",
+    "mssql"
+  ],
+  "author": "Nandor Kis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kisnandor2/mssqlTester/issues"
+  },
+  "homepage": "https://github.com/kisnandor2/mssqlTester#readme",
+  "dependencies": {
+    "chardet": "^0.4.2"
+  }
+}
