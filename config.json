@@ -1,0 +1,16 @@
+{
+	"_comment": "",
+	"SOLVED_OUTPUTS_FOLDER": "./Feladatok/",
+	"INPUT_FILENAME_PATTERN": ".*[a-zA-Z]{4}\\d{4}.*.sql",
+	"MAX_POINTS_FOR_ALL_EXERCISES": 15,
+	"EXERCISES":
+		[
+			{
+				"name": "pentek12-14",
+				"databaseName": "vizsga3",
+				"outputFileName": "vizsga3_solved.txt",
+				"exerciseCount": 10,
+				"exercisePoints": [1,1,2,2,2,2,2,1,1,1]
+			}
+		]
+}
