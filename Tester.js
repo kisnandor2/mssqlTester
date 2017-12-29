@@ -46,35 +46,41 @@ class Tester {
 	}
 
 	testOne(fileName){
-		if (!this.fileNameIsCorrect(fileName)){
-			fs.unlinkSync(fileName);
-			return {error: 'Incorrect fileName', points: 0};
-		}
-		this.fileName = fileName;
-		//Create a tmp file that is escaped
-		this.newFileName = this.removeUnnecessaryLines(fileName);
-		this.outputFileName = 'output_' + fileName + '.txt';
+		try {
+			if (!this.fileNameIsCorrect(fileName)){
+				fs.unlinkSync(fileName);
+				return {error: 'Incorrect fileName', points: 0};
+			}
+			this.fileName = fileName;
+			//Create a tmp file that is escaped
+			this.newFileName = this.removeUnnecessaryLines(fileName);
+			this.outputFileName = 'output_' + fileName + '.txt';
 
-		let db = config.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
-		let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
-		let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
+			let db = config.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
+			let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
+			let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
 
-		execSync(cleanDbCmd);
-		execSync(cmd);
+			execSync(cleanDbCmd);
+			execSync(cmd);
 
-		if (this.sqlOutputHandler.syntaxErrorOccured(this.outputFileName)){
+			if (this.sqlOutputHandler.syntaxErrorOccured(this.outputFileName)){
+				this.removeEveryFile();
+				return {error: 'Syntax error in the sql script', points: 0};
+			}
+
+			console.log(fileName);
+
+			let exercise = this.getExerciseNumber(fileName);
+			let ret = this.getScoreOfFile(this.outputFileName, exercise);
+
 			this.removeEveryFile();
-			return {error: 'Syntax error in the sql script', points: 0};
+
+			return ret;
 		}
-
-		console.log(fileName);
-
-		let exercise = this.getExerciseNumber(fileName);
-		let ret = this.getScoreOfFile(this.outputFileName, exercise);
-
-		this.removeEveryFile();
-
-		return ret;
+		catch(err){
+			console.log(fileName + " " + err);
+			return {error: "Unknown error! See output in cmd!", points: -10};
+		}
 	}
 
 	removeEveryFile(){
