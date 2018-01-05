@@ -5,19 +5,19 @@ class SqlOutputHandler {
 	//if lazy = true, headRowsSkipped, columnOrderSkipped
 	constructor(lazy = false){
 		//Patterns
-		this.outputExerciseEnd = /rows affected/g
-		this.changedDBPattern = /Changed database context.*/g
-		this.syntaxErrorPattern = /MSG \d{1}.*/g
-		this.minusSignPattern = /----/g
+		this.outputExerciseEnd = /rows affected/g;
+		this.changedDBPattern = /Changed database context.*/g;
+		this.syntaxErrorPattern = /MSG \d.*/g;
+		this.minusSignPattern = /----/g;
 
 		this.lazy = lazy;
 	}
 
 	getSolvedOutputs(folderName, outputTextList){
 		let allExercises = [];
-		outputTextList.forEach((elem, index)=>{
+		outputTextList.forEach((elem)=>{
 			let exercises = this.getExercisesInList(folderName, elem.outputFileName);
-			exercises = this.sortExercises(exercises);
+			exercises = SqlOutputHandler.sortExercises(exercises);
 			allExercises.push(exercises);
 		});
 		return allExercises;
@@ -40,13 +40,13 @@ class SqlOutputHandler {
 			}
 			if(data[i].match(this.outputExerciseEnd)){
 				elso = true;
-				if (exercise.length == 0)
+				if (exercise.length === 0)
 					continue;
-				if (exercise[0] == ''){
+				if (exercise[0] === ''){
 					exercise = [];
 					continue;
 				}
-				exercises.push(exercise)
+				exercises.push(exercise);
 				exercise = [];
 			}
 			else {
@@ -59,7 +59,7 @@ class SqlOutputHandler {
 		return exercises;
 	}
 
-	sortExercises(exercises){
+	static sortExercises(exercises){
 		let retExercises = [];
 		for (let i = 0; i < exercises.length; ++i){
 			retExercises.push(exercises[i].sort());
@@ -72,11 +72,11 @@ class SqlOutputHandler {
 		return data.match(this.syntaxErrorPattern);
 	}
 
-	exercisesEqual(exercise1, exercise2) {
-		if (exercise1.length != exercise2.length) 
+	static exercisesEqual(exercise1, exercise2) {
+		if (exercise1.length !== exercise2.length)
 			return false;
 		for (let i = 0; i < exercise1.length; ++i){
-			if (exercise1[i] != exercise2[i]){
+			if (exercise1[i] !== exercise2[i]){
 				return false;
 			}
 		}

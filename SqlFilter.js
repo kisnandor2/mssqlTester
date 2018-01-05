@@ -8,7 +8,7 @@ class SqlFilter {
 		this.insertIntoPattern = /INSERT .*INTO .*/;
 		this.createTablePattern = /CREATE .*TABLE .*/;
 		this.dropDatabasePattern = /DROP .*DATABASE .*/;
-		this.dropTablePattern = /DROP .*TABLE .*/;
+		// this.dropTablePattern = /DROP .*TABLE .*/;
 		this.createDatabasePattern = /CREATE .*DATABASE .*/;
 		this.useDatabasePattern = /USE .*/g
 	}
@@ -38,14 +38,14 @@ class SqlFilter {
 			//Remove createTables
 			else if (d.match(this.createTablePattern)){
 				data.splice(i, 1);
-				while (data[i].split('(').length == data[i].split(')').length)
+				while (data[i].split('(').length === data[i].split(')').length)
 					data.splice(i, 1);
 				data.splice(i, 1);
 			}
 			else
 				++i;
 		}
-		data = data.join('\n')
+		data = data.join('\n');
 		fs.writeFileSync(this.outputFileName, data);
 	}
 }

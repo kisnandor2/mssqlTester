@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-var lazy = false;
+let lazy = false;
 if (process.argv[2]){
 	lazy = true;
 	console.log('LAZY');
@@ -9,8 +9,8 @@ if (process.argv[2]){
 
 const tester = new (require('./Tester'))(lazy);
 
-let sqlPattern = /.*\.sql$/g
-let scsIdPattern = /[a-zA-Z]{4}\d{4}/g
+let sqlPattern = /.*\.sql$/g;
+let scsIdPattern = /[a-zA-Z]{4}\d{4}/g;
 
 let errorsFileName = 'errors.txt';
 let pointsFileName = 'points.txt';
@@ -24,7 +24,7 @@ catch (err){
 		if (fileName.match(sqlPattern)){
 			fs.unlinkSync(fileName);
 		}
-	})
+	});
 	execSync("bash -e ./unzip.sh") //Unzip all files	
 }
 
@@ -66,6 +66,6 @@ fs.readdirSync('./').forEach(fileName => {
 			fs.appendFileSync(pointsFileName, str);
 		}
 	}
-})
+});
 
 //TODO: Modify unzip.sh !!

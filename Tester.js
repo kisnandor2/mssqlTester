@@ -1,7 +1,7 @@
 //(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
 
 const testIt = false;
-const name = "snim1671.sql"
+const name = "snim1671.sql";
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -30,16 +30,16 @@ class Tester {
 
 	testConfigFile(){
 		let exercises = config.EXERCISES;
-		exercises.forEach((exercise, index)=>{
-			if (exercise.exercisePoints == undefined){
+		exercises.forEach((exercise)=>{
+			if (exercise.exercisePoints === undefined){
 				exercise.exercisePoints = new Array(exercise.exerciseCount);
 				exercise.exercisePoints.fill(1);
 			}
-			if (exercise.exerciseCount != exercise.exercisePoints.length){
+			if (exercise.exerciseCount !== exercise.exercisePoints.length){
 				throw `Ex ${exercise.name}: exercisePointList and exerciseCount not matching ${exercise.exerciseCount} .. ${exercise.exercisePoints.length}`;
 			}
 			let sum = exercise.exercisePoints.reduce((a,b)=> a + b, 0);
-			if (sum != config.MAX_POINTS_FOR_ALL_EXERCISES){
+			if (sum !== config.MAX_POINTS_FOR_ALL_EXERCISES){
 				throw `Ex ${exercise.name}: Exercise points does not equal MAX_POINTS_FOR_ALL_EXERCISES ${sum} .. ${config.MAX_POINTS_FOR_ALL_EXERCISES}`;
 			}
 		})
@@ -56,7 +56,7 @@ class Tester {
 			this.newFileName = this.removeUnnecessaryLines(fileName);
 			this.outputFileName = 'output_' + fileName + '.txt';
 
-			let db = config.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
+			let db = config.EXERCISES[Tester.getExerciseNumber(fileName)].databaseName;
 			let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
 			let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
 
@@ -70,7 +70,7 @@ class Tester {
 
 			console.log(fileName);
 
-			let exercise = this.getExerciseNumber(fileName);
+			let exercise = Tester.getExerciseNumber(fileName);
 			let ret = this.getScoreOfFile(this.outputFileName, exercise);
 
 			this.removeEveryFile();
@@ -98,15 +98,15 @@ class Tester {
 		return newFileName;
 	}
 
-	getExerciseNumber(fileName){
-		let splittedFileName = fileName.split('_');
-		let exerciseStr = splittedFileName[splittedFileName.length - 1].split('.')[0]
+	static getExerciseNumber(fileName){
+		let splitFileName = fileName.split('_');
+		let exerciseStr = splitFileName[splitFileName.length - 1].split('.')[0];
 		let exercise = parseInt(exerciseStr);
 		return exercise || 0;
 	}
 
 	fileNameIsCorrect(fileName){
-		return this.fileNamePattern.test(fileName);;
+		return this.fileNamePattern.test(fileName);
 	}
 
 	getScoreOfFile(output, exerciseIndex){
@@ -114,10 +114,9 @@ class Tester {
 		let exercises = JSON.parse(JSON.stringify(this.allExercises[exerciseIndex]));
 		let points = this.maxPoints;
 		let incorrectSelects = [];
-		let incorrectSelectsStmts = [];
-		outputExercises = this.sqlOutputHandler.sortExercises(outputExercises);
+		outputExercises = SqlOutputHandler.sortExercises(outputExercises);
 
-		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
+		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
 		let oks = [];
 
 		let i = 0;
@@ -125,7 +124,7 @@ class Tester {
 			let j = 0;
 
 			while (j < exercises.length){
-				if (this.sqlOutputHandler.exercisesEqual(outputExercises[i], exercises[j])){
+				if (SqlOutputHandler.exercisesEqual(outputExercises[i], exercises[j])){
 					exercises.splice(j, 1);
 					oks.push(lista[j]);
 					lista.splice(j, 1);
@@ -136,13 +135,13 @@ class Tester {
 			++i;
 		}
 
-		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
+		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
 		lista.forEach((elem, index)=>{
-			if (oks.indexOf(elem) == -1){
+			if (oks.indexOf(elem) === -1){
 				incorrectSelects.push(elem);
 				points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
 			}
-		})
+		});
 
 		return {points, incorrectSelects};
 	}
