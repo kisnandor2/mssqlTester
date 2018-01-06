@@ -1,6 +1,6 @@
 //(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
 
-const testIt = true;
+const testIt = false;
 const name = "test.sql";
 
 const { execSync } = require('child_process');
@@ -48,23 +48,22 @@ class Tester {
 			}
 		});
 		try{
-            fs.mkdirSync(config.OUTPUT_DIR);
+						fs.mkdirSync(config.OUTPUT_DIR);
 		}
 		catch (err){
-            // console.log(err);
+						// console.log(err);
 		}
-
 	}
 
 	splitAndExecInputFile(username, input, output, db){
-        process.chdir(config.OUTPUT_DIR);
-        try{
-            fs.mkdirSync(`./${username}`);
+		process.chdir(config.OUTPUT_DIR);
+		try{
+				fs.mkdirSync(`./${username}`);
 		}
 		catch (err){
 			// console.log(err);
 		}
-        process.chdir(`./${username}`);
+		process.chdir(`./${username}`);
 		fs.renameSync(`../../${input}`, `./${input}`);
 		this.removeOutputFiles();
 		SqlFileSplitter.removePreviousFiles();
@@ -88,6 +87,7 @@ class Tester {
 			fs.unlinkSync(fileName);
 			return {error: 'Incorrect fileName', points: 0};
 		}
+		this.sqlFileSplitter = new SqlFileSplitter();
 		this.fileName = fileName;
 		//Create a tmp file that is escaped
 		this.newFileName = this.removeUnnecessaryLines(fileName);
@@ -103,6 +103,7 @@ class Tester {
 
 		console.log(fileName);
 		let ret = this.getScoreOfAFileList(username, outputFiles, exerciseNumber);
+		fs.unlinkSync(fileName);
 		return ret;
 	}
 
@@ -153,14 +154,14 @@ class Tester {
 		}
 		let incorrectSelects = [];
 		let points = this.maxPoints;
-        lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
-        lista.forEach((elem, index)=>{
-            if (oks.indexOf(elem) === -1){
-                incorrectSelects.push(elem);
-                points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
-            }
-        });
-        return {points, incorrectSelects};
+				lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+				lista.forEach((elem, index)=>{
+						if (oks.indexOf(elem) === -1){
+								incorrectSelects.push(elem);
+								points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
+						}
+				});
+				return {points, incorrectSelects};
 	}
 
 	getScoreOfASingleFile(username, outputFileName, exercises){
@@ -168,7 +169,7 @@ class Tester {
 		let outputExercise = this.sqlOutputHandler.getExercisesInList(baseDir, outputFileName);
 		if (outputExercise.length === 0)
 			return -2; //nothing to check
-        outputExercise = SqlOutputHandler.sortExercises(outputExercise)[0];
+				outputExercise = SqlOutputHandler.sortExercises(outputExercise)[0];
 		for (let i = 0; i < exercises.length; ++i){
 			if (SqlOutputHandler.exercisesEqual(outputExercise, exercises[i]))
 				return i;
