@@ -42,7 +42,13 @@ fs.writeFileSync(pointsFileName, '');
 fs.readdirSync('./').forEach(fileName => {
 	if (fileName.match(sqlPattern)){
 		let scsID = undefined;
-		let test = tester.testOne(fileName);
+		let test = undefined;
+        try{
+            test = tester.testOne(fileName);
+        }
+        catch (err) {
+            test = {"error": err, "points": -10};
+        }
 		try{
 			scsID = fileName.match(scsIdPattern)[0];
 		}
