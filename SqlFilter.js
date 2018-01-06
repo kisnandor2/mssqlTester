@@ -11,7 +11,7 @@ class SqlFilter {
 		// this.dropTablePattern = /DROP .*TABLE .*/;
 		this.createDatabasePattern = /CREATE .*DATABASE .*/;
 		this.useDatabasePattern = /USE .*/g;
-		this.oneLineCommentPattern = /--/;
+		this.oneLineCommentPattern = /^--/;
 	}
 
 	filter(inputFileName, outputFileName){
@@ -43,6 +43,8 @@ class SqlFilter {
                     data.splice(i, 1);
                     continue;
 				}
+				else
+                    data.splice(i, 1);
 				while (data[i].split('(').length === data[i].split(')').length)
 					data.splice(i, 1);
 				data.splice(i, 1);
