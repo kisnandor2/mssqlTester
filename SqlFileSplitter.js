@@ -10,7 +10,7 @@ const DECLARE_VARIABLE_PATTERN = /DECLARE\s@\S*/ig;
 const VARIABLE_PATTERN = /@\S*/ig;
 const TEMPORARY_SAVE_PATTERN = /INTO\s#\S*/ig;
 const TEMPORARY_PATTERN = /#\S*/ig;
-const OUTPUT_FILE_PATTERN = /^output[0-9]+.sql$/i;
+const OUTPUT_FILE_PATTERN = /^output[0-9]+\.sql$/i;
 
 class SqlFileSplitter{
 	constructor(){
