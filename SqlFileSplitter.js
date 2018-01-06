@@ -216,7 +216,7 @@ class SqlFileSplitter{
 
         }
         for (let i = 0; i < ret.length; ++i)
-            ret[i].sort();
+            ret[i].sort((a,b)=>a>b);
         return ret;
     }
 
