@@ -1,7 +1,7 @@
 //(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
 
-const testIt = false;
-const name = "snim1671.sql";
+const testIt = true;
+const name = "test.sql";
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -10,6 +10,7 @@ const SqlFilter = require('./SqlFilter');
 const UTF8Converter = require('./UTF8Converter');
 const SqlOutputHandler = require('./SqlOutputHandler');
 const config = require('./config.json');
+const SqlFileSplitter = require('./SqlFileSplitter');
 
 class Tester {
 	constructor(lazy = false, testing = false){
@@ -24,11 +25,14 @@ class Tester {
 		this.sqlFilter = new SqlFilter();
 		this.utf8Converter = new UTF8Converter();
 		this.sqlOutputHandler = new SqlOutputHandler(this.lazy); //lazy or not?
+		this.sqlFileSplitter = new SqlFileSplitter();
 
 		this.allExercises = this.sqlOutputHandler.getSolvedOutputs(config.SOLVED_OUTPUTS_FOLDER, config.EXERCISES);
 	}
 
 	testConfigFile(){
+		if (!config.OUTPUT_DIR)
+			config.OUTPUT_DIR = "./out";
 		let exercises = config.EXERCISES;
 		exercises.forEach((exercise)=>{
 			if (exercise.exercisePoints === undefined){
@@ -42,52 +46,78 @@ class Tester {
 			if (sum !== config.MAX_POINTS_FOR_ALL_EXERCISES){
 				throw `Ex ${exercise.name}: Exercise points does not equal MAX_POINTS_FOR_ALL_EXERCISES ${sum} .. ${config.MAX_POINTS_FOR_ALL_EXERCISES}`;
 			}
-		})
+		});
+		try{
+            fs.mkdirSync(config.OUTPUT_DIR);
+		}
+		catch (err){
+            // console.log(err);
+		}
+
+	}
+
+	splitAndExecInputFile(username, input, output, db){
+        process.chdir(config.OUTPUT_DIR);
+        try{
+            fs.mkdirSync(`./${username}`);
+		}
+		catch (err){
+			// console.log(err);
+		}
+        process.chdir(`./${username}`);
+		fs.renameSync(`../../${input}`, `./${input}`);
+		this.removeOutputFiles();
+		SqlFileSplitter.removePreviousFiles();
+
+		this.sqlFileSplitter.split(input);
+		let ret = [];
+		fs.readdirSync('./').forEach(fileName => {
+			if (fileName.match(/^output\d+.sql$/i)){
+				let nr = fileName.match(/\d+/g)[0];
+				let cmd = `sqlcmd -i ${fileName} -o ${output}_${nr}.txt /d ${db}`;
+				ret.push(`${output}_${nr}.txt`);
+				execSync(cmd);
+			}
+		});
+		process.chdir('../../'); //go back to base dir
+		return ret;
 	}
 
 	testOne(fileName){
-		try {
-			if (!this.fileNameIsCorrect(fileName)){
+		if (!this.fileNameIsCorrect(fileName)){
+			fs.unlinkSync(fileName);
+			return {error: 'Incorrect fileName', points: 0};
+		}
+		this.fileName = fileName;
+		//Create a tmp file that is escaped
+		this.newFileName = this.removeUnnecessaryLines(fileName);
+		this.outputFileBaseName = 'output_' + fileName;
+
+		let exerciseNumber = Tester.getExerciseNumber(fileName);
+		let db = config.EXERCISES[exerciseNumber].databaseName;
+		let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
+
+		execSync(cleanDbCmd);
+		let username = fileName.match(this.fileNamePattern);
+		let outputFiles = this.splitAndExecInputFile(username ,this.newFileName, this.outputFileBaseName, db);
+
+		console.log(fileName);
+		let ret = this.getScoreOfAFileList(username, outputFiles, exerciseNumber);
+		return ret;
+	}
+
+	removeOutputFiles(){
+		fs.readdirSync('./').forEach(fileName => {
+			if (fileName.match(/^output_.*.txt/))
 				fs.unlinkSync(fileName);
-				return {error: 'Incorrect fileName', points: 0};
-			}
-			this.fileName = fileName;
-			//Create a tmp file that is escaped
-			this.newFileName = this.removeUnnecessaryLines(fileName);
-			this.outputFileName = 'output_' + fileName + '.txt';
-
-			let db = config.EXERCISES[Tester.getExerciseNumber(fileName)].databaseName;
-			let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
-			let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
-
-			execSync(cleanDbCmd);
-			execSync(cmd);
-
-			if (this.sqlOutputHandler.syntaxErrorOccured(this.outputFileName)){
-				this.removeEveryFile();
-				return {error: 'Syntax error in the sql script', points: 0};
-			}
-
-			console.log(fileName);
-
-			let exercise = Tester.getExerciseNumber(fileName);
-			let ret = this.getScoreOfFile(this.outputFileName, exercise);
-
-			this.removeEveryFile();
-
-			return ret;
-		}
-		catch(err){
-			console.log(fileName + " " + err);
-			return {error: "Unknown error! See output in cmd!", points: -10};
-		}
+		})
 	}
 
 	removeEveryFile(){
 		fs.unlinkSync(this.newFileName);
 		if (this.testing)
 			return;
-		fs.unlinkSync(this.outputFileName);
+		this.removeOutputFiles();
 		fs.unlinkSync(this.fileName);
 	}
 
@@ -107,6 +137,43 @@ class Tester {
 
 	fileNameIsCorrect(fileName){
 		return this.fileNamePattern.test(fileName);
+	}
+
+	getScoreOfAFileList(username, outputFiles, exerciseIndex){
+		let exercises = JSON.parse(JSON.stringify(this.allExercises[exerciseIndex]));
+		let oks = [];
+		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+		for (let i = 0; i < outputFiles.length; ++i){
+			let indexOfMatch = this.getScoreOfASingleFile(username, outputFiles[i], exercises);
+			if (indexOfMatch > -1){
+				oks.push(lista[indexOfMatch]);
+				exercises.splice(indexOfMatch, 1);
+				lista.splice(indexOfMatch, 1);
+			}
+		}
+		let incorrectSelects = [];
+		let points = this.maxPoints;
+        lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+        lista.forEach((elem, index)=>{
+            if (oks.indexOf(elem) === -1){
+                incorrectSelects.push(elem);
+                points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
+            }
+        });
+        return {points, incorrectSelects};
+	}
+
+	getScoreOfASingleFile(username, outputFileName, exercises){
+		let baseDir = `./${config.OUTPUT_DIR}/${username}/`;
+		let outputExercise = this.sqlOutputHandler.getExercisesInList(baseDir, outputFileName);
+		if (outputExercise.length === 0)
+			return -2; //nothing to check
+        outputExercise = SqlOutputHandler.sortExercises(outputExercise)[0];
+		for (let i = 0; i < exercises.length; ++i){
+			if (SqlOutputHandler.exercisesEqual(outputExercise, exercises[i]))
+				return i;
+		}
+		return -1;
 	}
 
 	getScoreOfFile(output, exerciseIndex){
