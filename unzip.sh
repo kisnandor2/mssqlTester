@@ -2,7 +2,7 @@
 
 #Unzip all ZIP files
 find ./submissions/ ! -path ./submissions/ -iname "*.zip" | while read fileName; do
-	unzip "$fileName" -d ./ #> /etc/null
+	unzip -o "$fileName" -d ./ #> /etc/null
 done
 
 #No rar files should be uploaded
