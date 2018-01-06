@@ -10,7 +10,8 @@ class SqlFilter {
 		this.dropDatabasePattern = /DROP .*DATABASE .*/;
 		// this.dropTablePattern = /DROP .*TABLE .*/;
 		this.createDatabasePattern = /CREATE .*DATABASE .*/;
-		this.useDatabasePattern = /USE .*/g
+		this.useDatabasePattern = /USE .*/g;
+		this.oneLineCommentPattern = /--/;
 	}
 
 	filter(inputFileName, outputFileName){
@@ -32,7 +33,8 @@ class SqlFilter {
 					d.match(this.useDatabasePattern) ||
 					d.match(this.dropDatabasePattern) ||
 					d.match(this.insertIntoPattern) ||
-					d.match(this.ifPattern))
+					d.match(this.ifPattern) ||
+					d.match(this.oneLineCommentPattern))
 				data.splice(i, 1);
 
 			//Remove createTables
