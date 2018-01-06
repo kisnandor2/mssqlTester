@@ -39,7 +39,10 @@ class SqlFilter {
 
 			//Remove createTables
 			else if (d.match(this.createTablePattern)){
-				data.splice(i, 1);
+				if (data[i].split('(').length === data[i].split(')').length){
+                    data.splice(i, 1);
+                    continue;
+				}
 				while (data[i].split('(').length === data[i].split(')').length)
 					data.splice(i, 1);
 				data.splice(i, 1);
