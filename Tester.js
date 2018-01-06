@@ -58,7 +58,7 @@ class Tester {
 	splitAndExecInputFile(username, input, output, db){
 		process.chdir(config.OUTPUT_DIR);
 		try{
-				fs.mkdirSync(`./${username}`);
+			fs.mkdirSync(`./${username}`);
 		}
 		catch (err){
 			// console.log(err);
@@ -109,7 +109,7 @@ class Tester {
 
 	removeOutputFiles(){
 		fs.readdirSync('./').forEach(fileName => {
-			if (fileName.match(/^output_.*.txt/))
+			if (fileName.match(/^output_.*\.txt/))
 				fs.unlinkSync(fileName);
 		})
 	}
@@ -154,14 +154,14 @@ class Tester {
 		}
 		let incorrectSelects = [];
 		let points = this.maxPoints;
-				lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
-				lista.forEach((elem, index)=>{
-						if (oks.indexOf(elem) === -1){
-								incorrectSelects.push(elem);
-								points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
-						}
-				});
-				return {points, incorrectSelects};
+		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+		lista.forEach((elem, index)=>{
+				if (oks.indexOf(elem) === -1){
+						incorrectSelects.push(elem);
+						points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
+				}
+		});
+		return {points, incorrectSelects};
 	}
 
 	getScoreOfASingleFile(username, outputFileName, exercises){
