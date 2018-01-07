@@ -70,14 +70,24 @@ class Tester {
 
 		this.sqlFileSplitter.split(input);
 		let ret = [];
-		fs.readdirSync('./').forEach(fileName => {
-			if (fileName.match(/^output\d+.sql$/i)){
-				let nr = fileName.match(/\d+/g)[0];
-				let cmd = `sqlcmd -i ${fileName} -o ${output}_${nr}.txt /d ${db}`;
-				ret.push(`${output}_${nr}.txt`);
-				execSync(cmd);
-			}
-		});
+		let i = 0;
+		let outputFileName = 'output';
+		let fileName = `${outputFileName}${i}.sql`;
+		while (fs.existsSync(fileName)){
+            let cmd = `sqlcmd -i ${fileName} -o ${output}_${i}.txt /d ${db}`;
+            execSync(cmd);
+            ret.push(`${output}_${i}.txt`);
+            ++i;
+            fileName = `${outputFileName}${i}.sql`;
+        }
+		// fs.readdirSync('./').forEach(fileName => {
+		// 	if (fileName.match(/^output\d+.sql$/i)){
+		// 		let nr = fileName.match(/\d+/g)[0];
+		// 		let cmd = `sqlcmd -i ${fileName} -o ${output}_${nr}.txt /d ${db}`;
+		// 		ret.push(`${output}_${nr}.txt`);
+		// 		execSync(cmd);
+		// 	}
+		// });
 		process.chdir('../../'); //go back to base dir
 		return ret;
 	}
