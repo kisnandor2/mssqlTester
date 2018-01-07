@@ -30,9 +30,18 @@ class SqlOutputHandler {
 		let exercise = [];
 		let elso = true;
 		for (let i = 0; i < data.length; ++i){
+			data[i] = data[i].trim();
+			if (data[i].length === 0)
+				continue;
 			if(data[i].match(this.changedDBPattern))
 				continue;
-			if(data[i].match(this.minusSignPattern))
+			if (this.lazy && data[i].match(this.minusSignPattern)){
+				elso = false;
+				continue;
+            }
+			else if(data[i].match(this.minusSignPattern))
+				continue;
+			if (this.lazy && elso && data[i].match(this.outputExerciseEnd))
 				continue;
 			if (this.lazy && elso){
 				elso = false;
@@ -40,20 +49,25 @@ class SqlOutputHandler {
 			}
 			if(data[i].match(this.outputExerciseEnd)){
 				elso = true;
-				if (exercise.length === 0)
-					continue;
-				if (exercise[0] === ''){
-					exercise = [];
-					continue;
+				let j = 0;
+				while (j < exercise.length){
+					if (exercise[j] === '')
+						exercise.splice(j, 1);
+					else
+						++j;
 				}
+                if (exercise.length === 0) {
+					exercise = [];
+                    continue;
+                }
 				exercises.push(exercise);
 				exercise = [];
 			}
 			else {
 				let ex = data[i].toUpperCase().replace(/\s\s+/g, ' ');
 				if (this.lazy)
-					ex = [...ex].sort().join();
-				exercise.push(ex);
+					ex = [...ex].sort().join('');
+				exercise.push(ex.trim());
 			}
 		}
 		return exercises;
