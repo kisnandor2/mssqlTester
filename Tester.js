@@ -141,9 +141,11 @@ class Tester {
 	}
 
 	getScoreOfAFileList(username, outputFiles, exerciseIndex){
+		let exerciseOrder = config.EXERCISES[exerciseIndex].exerciseOrder;
+		let exerciseCount = exerciseOrder.length;
 		let exercises = JSON.parse(JSON.stringify(this.allExercises[exerciseIndex]));
 		let oks = [];
-		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+		let lista = new Array(exerciseCount).fill(0).map((e,i)=>i+1);
 		for (let i = 0; i < outputFiles.length; ++i){
 			let indexOfMatch = this.getScoreOfASingleFile(username, outputFiles[i], exercises);
 			if (indexOfMatch > -1){
@@ -152,14 +154,19 @@ class Tester {
 				lista.splice(indexOfMatch, 1);
 			}
 		}
+		let oksHelper = new Set();
+		for (let i = 0; i < oks.length; ++i){
+			oksHelper.add(Math.floor(exerciseOrder[oks[i]-1]));
+		}
+		oks = Array.from(oksHelper);
 		let incorrectSelects = [];
 		let points = this.maxPoints;
 		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
 		lista.forEach((elem, index)=>{
-				if (oks.indexOf(elem) === -1){
-						incorrectSelects.push(elem);
-						points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
-				}
+			if (oks.indexOf(elem) === -1){
+				incorrectSelects.push(elem);
+				points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
+			}
 		});
 		return {points, incorrectSelects};
 	}
@@ -169,7 +176,7 @@ class Tester {
 		let outputExercise = this.sqlOutputHandler.getExercisesInList(baseDir, outputFileName);
 		if (outputExercise.length === 0)
 			return -2; //nothing to check
-				outputExercise = SqlOutputHandler.sortExercises(outputExercise)[0];
+		outputExercise = SqlOutputHandler.sortExercises(outputExercise)[0];
 		for (let i = 0; i < exercises.length; ++i){
 			if (SqlOutputHandler.exercisesEqual(outputExercise, exercises[i]))
 				return i;
