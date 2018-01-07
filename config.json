@@ -11,6 +11,7 @@
 				"databaseName": "vizsga_MIFI",
 				"outputFileName": "vizsga_MIFI_solved.txt",
 				"exerciseCount": 10,
+				"exerciseOrder": [1,2,3,4.1,4.2,5,6,7,8,9,10.1,10.2],
 				"exercisePoints": [1,1,2,2,2,2,2,1,1,1]
 			}
 		]
