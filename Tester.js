@@ -1,6 +1,6 @@
 //(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
 
-const testIt = true;
+const testIt = false;
 const name = "miam0171.sql";
 
 const { execSync } = require('child_process');
@@ -111,6 +111,7 @@ class Tester {
             fs.unlinkSync(this.outputFileBaseName);
             fs.unlinkSync(this.fileName);
             fs.unlinkSync(this.newFileName);
+            console.log(fileName);
             return ret;
         }
         fs.unlinkSync(this.outputFileBaseName);
