@@ -1,7 +1,7 @@
 //(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
 
-const testIt = false;
-const name = "test.sql";
+const testIt = true;
+const name = "miam0171.sql";
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -35,6 +35,9 @@ class Tester {
 			config.OUTPUT_DIR = "./out";
 		let exercises = config.EXERCISES;
 		exercises.forEach((exercise)=>{
+			if (!exercise.exerciseOrder){
+				exercise.exerciseOrder = new Array(exercise.exerciseCount).fill(0).map((e,i)=>i+1);
+			}
 			if (exercise.exercisePoints === undefined){
 				exercise.exercisePoints = new Array(exercise.exerciseCount);
 				exercise.exercisePoints.fill(1);
@@ -98,6 +101,19 @@ class Tester {
 		let exerciseNumber = Tester.getExerciseNumber(fileName);
 		let db = config.EXERCISES[exerciseNumber].databaseName;
 		let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
+        let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileBaseName + ' /d ' + db;
+
+        execSync(cleanDbCmd);
+        execSync(cmd);
+        if (!this.sqlOutputHandler.syntaxErrorOccured(this.outputFileBaseName)){
+            let exercise = Tester.getExerciseNumber(fileName);
+            let ret = this.getScoreOfFile(this.outputFileBaseName, exercise);
+            fs.unlinkSync(this.outputFileBaseName);
+            fs.unlinkSync(this.fileName);
+            fs.unlinkSync(this.newFileName);
+            return ret;
+        }
+        fs.unlinkSync(this.outputFileBaseName);
 
 		execSync(cleanDbCmd);
 		let username = fileName.match(this.fileNamePattern);
@@ -114,14 +130,6 @@ class Tester {
 			if (fileName.match(/^output_.*\.txt/))
 				fs.unlinkSync(fileName);
 		})
-	}
-
-	removeEveryFile(){
-		fs.unlinkSync(this.newFileName);
-		if (this.testing)
-			return;
-		this.removeOutputFiles();
-		fs.unlinkSync(this.fileName);
 	}
 
 	removeUnnecessaryLines(fileName){
@@ -187,13 +195,16 @@ class Tester {
 	}
 
 	getScoreOfFile(output, exerciseIndex){
+        let exerciseOrder = config.EXERCISES[exerciseIndex].exerciseOrder;
+        let exerciseCount = exerciseOrder.length;
+
 		let outputExercises = this.sqlOutputHandler.getExercisesInList('./', output);
 		let exercises = JSON.parse(JSON.stringify(this.allExercises[exerciseIndex]));
 		let points = this.maxPoints;
 		let incorrectSelects = [];
 		outputExercises = SqlOutputHandler.sortExercises(outputExercises);
 
-		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
+		let lista = new Array(exerciseCount).fill(0).map((e,i)=>i+1);
 		let oks = [];
 
 		let i = 0;
@@ -211,6 +222,12 @@ class Tester {
 			}
 			++i;
 		}
+
+        let oksHelper = new Set();
+        for (let i = 0; i < oks.length; ++i){
+            oksHelper.add(Math.floor(exerciseOrder[oks[i]-1]));
+        }
+        oks = Array.from(oksHelper);
 
 		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill(0).map((e,i)=>i+1);
 		lista.forEach((elem, index)=>{
