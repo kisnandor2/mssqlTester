@@ -18,11 +18,17 @@ class UTF8Converter {
 	convertFileToUTF8(fileName){
 		let buffer = fs.readFileSync(fileName);
 		let originalEncoding = chardet.detect(buffer);
-		if (originalEncoding === "ISO-8859-1")
-			originalEncoding = "latin1";
-		else if (originalEncoding === "ISO-8859-2")
-			originalEncoding = "latin1";
-		let file = fs.readFileSync(fileName, originalEncoding);
+		// if (originalEncoding === "ISO-8859-1")
+		// 	originalEncoding = "latin1";
+		// else if (originalEncoding === "ISO-8859-2")
+		// 	originalEncoding = "latin1";
+		let file = undefined;
+		try{
+            file = fs.readFileSync(fileName, originalEncoding);
+		}
+		catch (err){
+            file = fs.readFileSync(fileName, 'latin1');
+		}
 		fs.unlinkSync(fileName);
 		file = this.removeAccentedLetters(file.toString());
 		file = UTF8Converter.cleanString(file);
