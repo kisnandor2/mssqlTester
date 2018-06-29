@@ -1,8 +1,15 @@
 const fs = require('fs');
 
+/**
+* @class SqlFilter
+* Remove dangeroues code from sql script
+*/
+
 class SqlFilter {
+	/**
+	* @constructor
+	*/
 	constructor(){
-		//Patterns
 		this.createOrAlterPattern = /CREATE OR ALTER/;
 		this.ifPattern = /IF.*/;
 		this.insertIntoPattern = /INSERT .*INTO .*/;
@@ -13,6 +20,11 @@ class SqlFilter {
 		this.useDatabasePattern = /USE .*/g
 	}
 
+	/**
+	* Filter and create a new file
+	* @param {string} inputFileName
+	* @param {string} outputFileName
+	*/
 	filter(inputFileName, outputFileName){
 		this.inputFileName = inputFileName;
 		this.outputFileName = outputFileName;

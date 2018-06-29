@@ -1,35 +1,42 @@
-//(select\s.*\sfrom\s.*\s(join.*\s)*(where\s(.|\n)*\s)?(group\sby\s.*\s)?(having\s.*\s)?(\s?intersect\s?)?(\s?union\s?)?(\s?except\s)?)(?R)*
-
-const testIt = false;
-const name = "snim1671.sql"
-
 const { execSync } = require('child_process');
 const fs = require('fs');
 
 const SqlFilter = require('./SqlFilter');
 const UTF8Converter = require('./UTF8Converter');
 const SqlOutputHandler = require('./SqlOutputHandler');
-const config = require('./config.json');
+const CONFIG = require('./config.json');
 
+/**
+* @class Tester
+* Class for comparing sql outputs and grading them
+*/
 class Tester {
+	/**
+	* @constructor
+	* @param {bool} lazy - if true the column order and header names are not compared
+	* @param {bool} testing - true if wanna test
+	*/
 	constructor(lazy = false, testing = false){
 		this.testing = testing;
 		this.lazy = lazy;
 
 		this.testConfigFile();
 
-		this.maxPoints = config.MAX_POINTS_FOR_ALL_EXERCISES;
-		this.fileNamePattern = new RegExp(config.INPUT_FILENAME_PATTERN);
+		this.maxPoints = CONFIG.MAX_POINTS_FOR_ALL_EXERCISES;
+		this.fileNamePattern = new RegExp(CONFIG.INPUT_FILENAME_PATTERN);
 
 		this.sqlFilter = new SqlFilter();
 		this.utf8Converter = new UTF8Converter();
 		this.sqlOutputHandler = new SqlOutputHandler(this.lazy); //lazy or not?
 
-		this.allExercises = this.sqlOutputHandler.getSolvedOutputs(config.SOLVED_OUTPUTS_FOLDER, config.EXERCISES);
+		this.allExercises = this.sqlOutputHandler.getSolvedOutputs(CONFIG.SOLVED_OUTPUTS_FOLDER, CONFIG.EXERCISES);
 	}
 
+	/**
+	* Check if the config file is well formated
+	*/
 	testConfigFile(){
-		let exercises = config.EXERCISES;
+		let exercises = CONFIG.EXERCISES;
 		exercises.forEach((exercise, index)=>{
 			if (exercise.exercisePoints == undefined){
 				exercise.exercisePoints = new Array(exercise.exerciseCount);
@@ -39,12 +46,17 @@ class Tester {
 				throw `Ex ${exercise.name}: exercisePointList and exerciseCount not matching ${exercise.exerciseCount} .. ${exercise.exercisePoints.length}`;
 			}
 			let sum = exercise.exercisePoints.reduce((a,b)=> a + b, 0);
-			if (sum != config.MAX_POINTS_FOR_ALL_EXERCISES){
-				throw `Ex ${exercise.name}: Exercise points does not equal MAX_POINTS_FOR_ALL_EXERCISES ${sum} .. ${config.MAX_POINTS_FOR_ALL_EXERCISES}`;
+			if (sum != CONFIG.MAX_POINTS_FOR_ALL_EXERCISES){
+				throw `Ex ${exercise.name}: Exercise points does not equal MAX_POINTS_FOR_ALL_EXERCISES ${sum} .. ${CONFIG.MAX_POINTS_FOR_ALL_EXERCISES}`;
 			}
 		})
 	}
 
+	/**
+	* Test a single file
+	* @param {string} fileName - the name of the file to be tested
+	* @returns {int/string} pointsCollected - how many points were collected, or a string with error
+	*/
 	testOne(fileName){
 		try {
 			if (!this.fileNameIsCorrect(fileName)){
@@ -56,7 +68,7 @@ class Tester {
 			this.newFileName = this.removeUnnecessaryLines(fileName);
 			this.outputFileName = 'output_' + fileName + '.txt';
 
-			let db = config.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
+			let db = CONFIG.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
 			let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
 			let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
 
@@ -83,14 +95,23 @@ class Tester {
 		}
 	}
 
+	/**
+	* Delete all the files that were generated during testing phase
+	* Delete input, already tested file
+	*/
 	removeEveryFile(){
-		fs.unlinkSync(this.newFileName);
 		if (this.testing)
 			return;
+		fs.unlinkSync(this.newFileName);
 		fs.unlinkSync(this.outputFileName);
 		fs.unlinkSync(this.fileName);
 	}
 
+	/**
+	* Convert the input file to readable and filtered SQL, that will be tested
+	* @param {string} fileName - name of the file that will be tested
+	* @returns {string} newFileName - name of the new file that is already filtered
+	*/
 	removeUnnecessaryLines(fileName){
 		let newFileName = 'escape_' + fileName;
 		this.utf8Converter.convertFileToUTF8(fileName);
@@ -98,6 +119,11 @@ class Tester {
 		return newFileName;
 	}
 
+	/**
+	* Get the number of the submission from fileName
+	* @params {string} fileName - name of the input file
+	* @returns {int} submissionNumber
+	*/
 	getExerciseNumber(fileName){
 		let splittedFileName = fileName.split('_');
 		let exerciseStr = splittedFileName[splittedFileName.length - 1].split('.')[0]
@@ -105,10 +131,20 @@ class Tester {
 		return exercise || 0;
 	}
 
+	/**
+	* Check if fileName matches config file name pattern
+	* @returns {bool}
+	*/
 	fileNameIsCorrect(fileName){
 		return this.fileNamePattern.test(fileName);;
 	}
 
+	/**
+	* Get the score of a single file
+	* @param {string} output - name of the file that was filtered and cleaned
+	* @param {int} exerciseIndex - number of the submission
+	* @returns {Object} points, incorrectSelects - how many points were collected, and which selects were incorrect
+	*/
 	getScoreOfFile(output, exerciseIndex){
 		let outputExercises = this.sqlOutputHandler.getExercisesInList('./', output);
 		let exercises = JSON.parse(JSON.stringify(this.allExercises[exerciseIndex]));
@@ -117,7 +153,7 @@ class Tester {
 		let incorrectSelectsStmts = [];
 		outputExercises = this.sqlOutputHandler.sortExercises(outputExercises);
 
-		let lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
+		let lista = new Array(CONFIG.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
 		let oks = [];
 
 		let i = 0;
@@ -136,11 +172,11 @@ class Tester {
 			++i;
 		}
 
-		lista = new Array(config.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
+		lista = new Array(CONFIG.EXERCISES[exerciseIndex].exerciseCount).fill().map((e,i)=>i+1);
 		lista.forEach((elem, index)=>{
 			if (oks.indexOf(elem) == -1){
 				incorrectSelects.push(elem);
-				points -= config.EXERCISES[exerciseIndex].exercisePoints[index];
+				points -= CONFIG.EXERCISES[exerciseIndex].exercisePoints[index];
 			}
 		})
 
@@ -151,7 +187,13 @@ class Tester {
 
 module.exports = Tester;
 
-if (testIt){
+if (require.main === module){
+	// const name = "snim1671.sql"
+	const name = process.argv[2];
+	if (name == undefined){
+		console.log("Usage: " + process.argv[1] + " nameOfFileToBeTested")
+		process.exit(-1);
+	}
 	t = new Tester(true, true); //testing
 	console.log(t.testOne(name));
 }

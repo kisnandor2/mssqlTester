@@ -1,12 +1,24 @@
 const fs = require('fs');
 const chardet = require('chardet');
 
+/**
+* @class UTF8Converter
+* Convert the sql script to UTF-8
+*/
 class UTF8Converter {
+	/**
+	* @constructor
+	*/
 	constructor(){
 		this.from = 'éáúûűüóőö';
 		this.to = 'eauuuuooo';
 	}
 
+	/**
+	* Clean string from accented letters
+	* @param {string} inputStr
+	* @returns {string} outputStr - cleaned string
+	*/
 	removeAccentedLetters(text){
 		[...this.from].forEach((letter, index)=>{
 			let reg = new RegExp(letter, "g");
@@ -15,6 +27,10 @@ class UTF8Converter {
 		return text;
 	}
 
+	/**
+	* Convert file to UTF-8 with chardet package
+	* @param {string} fileName - input filename
+	*/
 	convertFileToUTF8(fileName){
 		let buffer = fs.readFileSync(fileName);
 		let originalEncoding = chardet.detect(buffer);
@@ -29,6 +45,11 @@ class UTF8Converter {
 		fs.writeFileSync(fileName, file, 'UTF-8');
 	}
 
+	/**
+	* Remove invalid characters form a string
+	* @param {string} inputStr
+	* @returns {string} outputStr - cleaned string
+	*/
 	cleanString(input) {
 	  var output = "";
 	  for (var i=0; i<input.length; i++) {
