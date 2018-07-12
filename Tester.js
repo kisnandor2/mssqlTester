@@ -4,7 +4,8 @@ const fs = require('fs');
 const SqlFilter = require('./SqlFilter');
 const UTF8Converter = require('./UTF8Converter');
 const SqlOutputHandler = require('./SqlOutputHandler');
-const CONFIG = require('./config.json');
+const configFileTester = require('./ConfigFileTester');
+const CONFIG = configFileTester.CONFIG;
 
 /**
 * @class Tester
@@ -20,8 +21,6 @@ class Tester {
 		this.testing = testing;
 		this.lazy = lazy;
 
-		this.testConfigFile();
-
 		this.maxPoints = CONFIG.MAX_POINTS_FOR_ALL_EXERCISES;
 		this.fileNamePattern = new RegExp(CONFIG.INPUT_FILENAME_PATTERN);
 
@@ -30,26 +29,8 @@ class Tester {
 		this.sqlOutputHandler = new SqlOutputHandler(this.lazy); //lazy or not?
 
 		this.allExercises = this.sqlOutputHandler.getSolvedOutputs(CONFIG.SOLVED_OUTPUTS_FOLDER, CONFIG.EXERCISES);
-	}
 
-	/**
-	* Check if the config file is well formated
-	*/
-	testConfigFile(){
-		let exercises = CONFIG.EXERCISES;
-		exercises.forEach((exercise, index)=>{
-			if (exercise.exercisePoints == undefined){
-				exercise.exercisePoints = new Array(exercise.exerciseCount);
-				exercise.exercisePoints.fill(1);
-			}
-			if (exercise.exerciseCount != exercise.exercisePoints.length){
-				throw `Ex ${exercise.name}: exercisePointList and exerciseCount not matching ${exercise.exerciseCount} .. ${exercise.exercisePoints.length}`;
-			}
-			let sum = exercise.exercisePoints.reduce((a,b)=> a + b, 0);
-			if (sum != CONFIG.MAX_POINTS_FOR_ALL_EXERCISES){
-				throw `Ex ${exercise.name}: Exercise points does not equal MAX_POINTS_FOR_ALL_EXERCISES ${sum} .. ${CONFIG.MAX_POINTS_FOR_ALL_EXERCISES}`;
-			}
-		})
+		this.path = CONFIG.UNZIPPED_SUBMISSIONS_FOLDER;
 	}
 
 	/**
@@ -60,32 +41,28 @@ class Tester {
 	testOne(fileName){
 		try {
 			if (!this.fileNameIsCorrect(fileName)){
-				fs.unlinkSync(fileName);
+				// fs.unlinkSync(fileName);
 				return {error: 'Incorrect fileName', points: 0};
 			}
-			this.fileName = fileName;
 			//Create a tmp file that is escaped
+
 			this.newFileName = this.removeUnnecessaryLines(fileName);
 			this.outputFileName = 'output_' + fileName + '.txt';
 
 			let db = CONFIG.EXERCISES[this.getExerciseNumber(fileName)].databaseName;
-			let cmd = 'sqlcmd -i ' + this.newFileName + ' -o ' + this.outputFileName + ' /d ' + db;
+			let cmd = `sqlcmd -i ${this.newFileName} -o ${CONFIG.SOLVED_SUBMISSIONS_FOLDER + '/' + this.outputFileName} /d ${db}`
 			let cleanDbCmd = 'sqlcmd -i Feladatok/cleanDB.sql /d ' + db;
 
 			execSync(cleanDbCmd);
 			execSync(cmd);
-
-			if (this.sqlOutputHandler.syntaxErrorOccured(this.outputFileName)){
-				this.removeEveryFile();
+			if (this.sqlOutputHandler.syntaxErrorOccured(CONFIG.SOLVED_SUBMISSIONS_FOLDER + "/" + this.outputFileName)){
 				return {error: 'Syntax error in the sql script', points: 0};
 			}
 
 			console.log(fileName);
 
 			let exercise = this.getExerciseNumber(fileName);
-			let ret = this.getScoreOfFile(this.outputFileName, exercise);
-
-			this.removeEveryFile();
+			let ret = this.getScoreOfFile(CONFIG.SOLVED_SUBMISSIONS_FOLDER + "/" + this.outputFileName, exercise);
 
 			return ret;
 		}
@@ -113,7 +90,8 @@ class Tester {
 	* @returns {string} newFileName - name of the new file that is already filtered
 	*/
 	removeUnnecessaryLines(fileName){
-		let newFileName = 'escape_' + fileName;
+		let newFileName = CONFIG.FILTERED_AND_SOLVED_SUBMISSIONS_FOLDER + '/escape_' + fileName;
+		fileName = CONFIG.UNZIPPED_SUBMISSIONS_FOLDER + '/' + fileName;
 		this.utf8Converter.convertFileToUTF8(fileName);
 		this.sqlFilter.filter(fileName, newFileName);
 		return newFileName;
@@ -127,8 +105,10 @@ class Tester {
 	getExerciseNumber(fileName){
 		let splittedFileName = fileName.split('_');
 		let exerciseStr = splittedFileName[splittedFileName.length - 1].split('.')[0]
-		let exercise = parseInt(exerciseStr);
-		return exercise || 0;
+		let exercise = parseInt(exerciseStr)-1;
+		if (exercise == NaN || exercise < 0)
+			throw `Could not parse for exercise index. Incorrect fileName? ${fileName}`;
+		return exercise;
 	}
 
 	/**
