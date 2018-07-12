@@ -1,3 +1,5 @@
+const configFileTester = require('./ConfigFileTester');
+const CONFIG = configFileTester.CONFIG;
 const { execSync } = require('child_process');
 const fs = require('fs');
 
@@ -39,7 +41,7 @@ catch(err){
 fs.writeFileSync(errorsFileName, '');
 fs.writeFileSync(pointsFileName, '');
 
-fs.readdirSync('./').forEach(fileName => {
+fs.readdirSync(CONFIG.UNZIPPED_SUBMISSIONS_FOLDER).forEach(fileName => {
 	if (fileName.match(sqlPattern)){
 		let scsID = undefined;
 		let test = tester.testOne(fileName);
